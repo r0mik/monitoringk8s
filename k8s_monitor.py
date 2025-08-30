@@ -155,7 +155,8 @@ class LogViewerScreen(ModalScreen):
                 yield Button("Show Errors Only", id="filter-errors")
                 yield Button("Show All", id="show-all")
                 yield Button("Close", id="close-logs")
-            yield TextArea("Loading logs...", id="log-content", read_only=True)
+            with ScrollableContainer(id="log-container"):
+                yield Static("Loading logs...", id="log-content")
 
     def on_mount(self) -> None:
         self.refresh_logs()
@@ -171,8 +172,8 @@ class LogViewerScreen(ModalScreen):
             self.dismiss()
 
     def refresh_logs(self) -> None:
-        log_area = self.query_one("#log-content", TextArea)
-        log_area.text = "Loading logs..."
+        log_area = self.query_one("#log-content", Static)
+        log_area.update("Loading logs...")
         
         logs = self.k8s_api.get_pod_logs(self.pod_name, self.namespace, tail_lines=500)
         events = self.k8s_api.get_pod_events(self.pod_name, self.namespace)
@@ -185,10 +186,10 @@ class LogViewerScreen(ModalScreen):
                 time_str = event["time"].strftime("%Y-%m-%d %H:%M:%S") if event["time"] else "Unknown"
                 content += f"[{time_str}] {event['type']}: {event['reason']} - {event['message']}\n"
         
-        log_area.text = content
+        log_area.update(content)
 
     def filter_errors(self) -> None:
-        log_area = self.query_one("#log-content", TextArea)
+        log_area = self.query_one("#log-content", Static)
         
         logs = self.k8s_api.get_pod_logs(self.pod_name, self.namespace, tail_lines=500)
         events = self.k8s_api.get_pod_events(self.pod_name, self.namespace)
@@ -211,7 +212,25 @@ class LogViewerScreen(ModalScreen):
                 time_str = event["time"].strftime("%Y-%m-%d %H:%M:%S") if event["time"] else "Unknown"
                 content += f"[{time_str}] {event['type']}: {event['reason']} - {event['message']}\n"
         
-        log_area.text = content if content.strip() != "=== ERROR LOGS ===" else "No errors found in recent logs"
+        log_area.update(content if content.strip() != "=== ERROR LOGS ===" else "No errors found in recent logs")
+
+    def on_key(self, event) -> None:
+        # Handle scrolling and navigation in log viewer
+        container = self.query_one("#log-container", ScrollableContainer)
+        if event.key == "up" or event.key == "k":
+            container.scroll_up()
+        elif event.key == "down" or event.key == "j":
+            container.scroll_down()
+        elif event.key == "page_up":
+            container.scroll_page_up()
+        elif event.key == "page_down":
+            container.scroll_page_down()
+        elif event.key == "home":
+            container.scroll_home()
+        elif event.key == "end":
+            container.scroll_end()
+        elif event.key == "escape":
+            self.dismiss()
 
 
 class PodsTable(DataTable):
@@ -337,36 +356,46 @@ class K8sMonitorApp(App):
         self.refresh_data()
 
     def refresh_data(self) -> None:
-        tabs = self.query_one("#tabs")
-        current_tab = tabs.active
-        
-        if current_tab == "pods-tab":
-            pods_table = self.query_one(PodsTable)
-            pods_table.refresh_data(self.namespace)
-        elif current_tab == "nodes-tab":
-            nodes_table = self.query_one(NodesTable)
-            nodes_table.refresh_data()
-        elif current_tab == "services-tab":
-            services_table = self.query_one(ServicesTable)
-            services_table.refresh_data(self.namespace)
+        try:
+            tabs = self.query_one(TabbedContent)
+            current_tab = tabs.active
+            
+            if current_tab == "pods-tab":
+                pods_table = self.query_one(PodsTable)
+                pods_table.refresh_data(self.namespace)
+            elif current_tab == "nodes-tab":
+                nodes_table = self.query_one(NodesTable)
+                nodes_table.refresh_data()
+            elif current_tab == "services-tab":
+                services_table = self.query_one(ServicesTable)
+                services_table.refresh_data(self.namespace)
+        except Exception as e:
+            # Fallback: refresh all tables
+            try:
+                pods_table = self.query_one(PodsTable)
+                pods_table.refresh_data(self.namespace)
+            except:
+                pass
 
     def on_key(self, event) -> None:
         # Handle tab switching
-        if event.key == "1":
-            tabs = self.query_one("#tabs")
-            tabs.active = "pods-tab"
-            self.refresh_data()
-        elif event.key == "2":
-            tabs = self.query_one("#tabs")
-            tabs.active = "nodes-tab"
-            self.refresh_data()
-        elif event.key == "3":
-            tabs = self.query_one("#tabs")
-            tabs.active = "services-tab"
-            self.refresh_data()
-        elif event.key == "r":
-            # Manual refresh
-            self.refresh_data()
+        try:
+            tabs = self.query_one(TabbedContent)
+            if event.key == "1":
+                tabs.active = "pods-tab"
+                self.refresh_data()
+            elif event.key == "2":
+                tabs.active = "nodes-tab"
+                self.refresh_data()
+            elif event.key == "3":
+                tabs.active = "services-tab"
+                self.refresh_data()
+            elif event.key == "r":
+                # Manual refresh
+                self.refresh_data()
+        except Exception:
+            if event.key == "r":
+                self.refresh_data()
 
     def on_tabbed_content_tab_activated(self, event) -> None:
         self.refresh_data()
