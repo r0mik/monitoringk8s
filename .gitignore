@@ -1,0 +1,116 @@
+# Kubernetes configs and secrets
+*.kubeconfig
+kubeconfig*
+.kube/
+config
+*.key
+*.crt
+*.pem
+*.p12
+*.pfx
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+secrets.yaml
+secrets.yml
+*secret*
+*password*
+*token*
+*.credentials
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.virtualenv/
+pyvenv.cfg
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+*.out
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Coverage and testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Local development
+local/
+.local/
+dev/
+development/
+
+# Docker
+Dockerfile.local
+docker-compose.override.yml
+.dockerignore
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
